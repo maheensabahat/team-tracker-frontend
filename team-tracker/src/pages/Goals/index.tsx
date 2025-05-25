@@ -1,5 +1,5 @@
 // src/pages/Goals/index.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { GoalModal } from "@/components/goals/GoalModal";
 import type { Goal } from "@/types/goal";
+import { apiService } from "@/services/goals.service";
 
 export default function GoalListPage() {
   const [modalState, setModalState] = useState<{
@@ -19,30 +20,41 @@ export default function GoalListPage() {
     currentGoal?: Goal;
   }>({ open: false, mode: "add" });
 
-  // Mock data
-  const [goals, setGoals] = useState<Goal[]>([
-    {
-      id: "1",
-      title: "Complete MVP",
-      description: "Build the first working version of the app",
-      dueDate: "2023-12-31",
-      status: "IN_PROGRESS",
-    },
-  ]);
+  const [goals, setGoals] = useState<Goal[]>([]);
 
-  const handleSubmit = (goalData: Omit<Goal, "id">) => {
+  useEffect(() => {
+    apiService
+      .getGoals()
+      .then((resp) => {
+        setGoals(resp as Goal[]);
+      })
+      .catch((err) => console.log(err.message));
+  }, []);
+
+  const handleSubmit = (goalData: Goal) => {
     if (modalState.mode === "add") {
       // Add new goal
-      setGoals((prev) => [...prev, { ...goalData, id: Date.now().toString() }]);
+      apiService
+        .createGoal({ ...goalData })
+        .then((resp) => {
+          setGoals((prev) => [...prev, { ...goalData, id: resp.id }]);
+        })
+        .catch((err) => console.log(err.message));
     } else {
+      const { id, ...rest } = goalData;
       // Update existing goal
-      setGoals((prev) =>
-        prev.map((goal) =>
-          goal.id === modalState.currentGoal?.id
-            ? { ...goal, ...goalData }
-            : goal
-        )
-      );
+      apiService
+        .updateGoal(id, rest)
+        .then((resp) => {
+          setGoals((prev) =>
+            prev.map((goal) =>
+              goal.id === modalState.currentGoal?.id
+                ? { ...goal, ...goalData }
+                : goal
+            )
+          );
+        })
+        .catch((err) => console.log(err.message));
     }
   };
 
