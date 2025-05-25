@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Goal, GoalStatus } from "@/types/goal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface GoalModalProps {
   open: boolean;
@@ -33,12 +33,26 @@ export function GoalModal({
   goal,
   onSubmit,
 }: GoalModalProps) {
-  const [formData, setFormData] = useState<Omit<Goal, "id">>({
-    title: goal?.title || "",
-    description: goal?.description || "",
-    dueDate: goal?.dueDate || new Date().toISOString().split("T")[0],
-    status: goal?.status || "NOT_STARTED",
+  const [formData, setFormData] = useState<Goal>({
+    id: "",
+    title: "",
+    description: "",
+    dueDate: new Date().toISOString().split("T")[0],
+    status: "NOT_STARTED",
   });
+
+  // Reset form when modal opens/closes or goal changes
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        id: goal?.id || "",
+        title: goal?.title || "",
+        description: goal?.description || "",
+        dueDate: goal?.dueDate || new Date().toISOString().split("T")[0],
+        status: goal?.status || "NOT_STARTED",
+      });
+    }
+  }, [open, goal]); // Reset when open state or goal changes
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
